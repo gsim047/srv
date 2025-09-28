@@ -1,0 +1,3 @@
+
+
+@reboot sleep 60 && php /home/user/bin/send_ip.php
