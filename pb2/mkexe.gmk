@@ -1,0 +1,89 @@
+# This file was created by MkExe ver. 1.0.10.22 [2016-02-25 14:39:44]
+
+NAME=mkexe
+MKFILE=$(NAME).gmk
+
+CC=g++
+#RCC=windres
+CF_C=-c
+CF_E=-o
+RC=$(NAME).rc
+CFG=$(NAME).cfg
+
+ifeq ($(OS),Windows_NT)
+
+UNAME_M=x86_64
+MYBIN=\TOOLS
+TARGET=$(NAME).exe
+RES=$(NAME)_res.o
+CPPFLAGS=-s -I /include -std=c++11
+CFLAGS=$(CPPFLAGS)
+LIBS=-L /lib -lcMain -ludk -lpthread -lversion
+#RCCCMD=$(RCC) -o $(RES) $(RC)
+CP_S=copy /Y
+RM_S=del /Q /S
+
+else
+
+UNAME_M = $(shell uname -m)
+
+MYBIN=~/bin
+TARGET=$(NAME)
+RES=$(NAME).res
+CPPFLAGS=-s -I ~/include -std=c++11
+CFLAGS=$(CPPFLAGS)
+LIBS=-L ~/lib -lcMain -ludk -lpthread
+CP_S=cp -v -u
+RM_S=rm -f
+
+endif
+
+ifeq ($(UNAME_M),x86_64)
+RCCCMD=objcopy -I binary -O elf64-x86-64 -B i386 $(RC) $(RES)
+else
+RCCCMD=objcopy -I binary -O elf32-i386 -B i386 $(RC) $(RES)
+#RCCCMD=objcopy -I binary -O elf64-littleaarch64 $(RC) $(RES)
+endif
+
+ARC=$(NAME)_src
+#LIBS=-L ~/lib -lcMain -ludk -lpthread
+LLIBS=
+
+
+OBJS=\
+	$(NAME).o
+
+
+all: $(TARGET) $(OBJS) # $(ARC).rar
+
+
+$(TARGET) : $(OBJS) $(LLIBS) $(MKFILE) $(RES)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(RES) $(LIBS) $(LLIBS) 
+
+%.o : %.cpp
+	$(CC) $(CPPFLAGS) -c -o $@ $<
+
+%.o : %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+
+$(RES) : $(RC) $(OBJS)
+	vinc $(RC)
+	$(RCCCMD)
+
+$(ARC).rar : $(OBJS) $(MKFILE)
+	7z u $(ARC) *.h *.cpp *.c *.rc *.mak *.def *.gmk *.ico
+# cp $(ARC).rar \Doc\h
+
+clean:
+	$(RM_S) $(TARGET)
+	$(RM_S) $(OBJS)
+	$(RM_S) $(RES)
+
+
+install: all copy
+
+copy: all
+	$(CP_S) $(TARGET) $(MYBIN)
+	$(CP_S) $(CFG) $(MYBIN)
+	$(CP_S) mkexe.tmpl.* $(MYBIN)
